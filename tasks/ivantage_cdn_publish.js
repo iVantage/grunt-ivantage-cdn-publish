@@ -10,41 +10,45 @@
 
 module.exports = function(grunt) {
 
+  var async = grunt.util.async
+    , _ = grunt.util._
+    , exec = require('shelljs').exec;
+
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
 
   grunt.registerMultiTask('ivantage_cdn_publish', 'Send static build artifacts to the static file server to be picked up by our cdn.', function() {
     // Merge task-specific and/or target-specific options with these defaults.
     var options = this.options({
-      punctuation: '.',
-      separator: ', '
+      cwd: process.cwd(),
+      concurrency: 5,
+      scp: 'scp'
     });
 
-    // Iterate over all specified file groups.
-    this.files.forEach(function(f) {
-      // Concat specified files.
-      var src = f.src.filter(function(filepath) {
-        // Warn on and remove invalid source files (if nonull was set).
-        if (!grunt.file.exists(filepath)) {
-          grunt.log.warn('Source file "' + filepath + '" not found.');
-          return false;
-        } else {
-          return true;
-        }
-      }).map(function(filepath) {
-        // Read file source.
-        return grunt.file.read(filepath);
-      }).join(grunt.util.normalizelf(options.separator));
+    grunt.config.requires([this.name, this.target, 'assets'].join('.'));
+    grunt.config.requires([this.name, this.target, 'version'].join('.'));
 
-      // Handle options.
-      src += options.punctuation;
+    var assets = grunt.file.expand({cwd: options.cwd}, this.data.assets)
+      , done = _.after(assets.length, this.async());
 
-      // Write the destination file.
-      grunt.file.write(f.dest, src);
+    var sendFile = function(file, cb) {
+      var cmd = options.scp + ' -r "' + file + '" cdn@static.ivantagehealth.com:/home/cdn/www/ivantage/' + this.target + '/' + this.target + '-' + this.version + '/';
+      exec(cmd, function(code, output) {
+        return code > 0 ? cb(output) : cb();
+      });
+    };
 
-      // Print a success message.
-      grunt.log.writeln('File "' + f.dest + '" created.');
+    async.eachLimit(assets, options.concurrency, sendFile, function(err) {
+      if(err) {
+        grunt.log.error(err);
+        grunt.fail.fatal('Failed pushing files to the cdn');
+      }
+      done();
     });
+
+    console.log(assets);
+
   });
+
 
 };

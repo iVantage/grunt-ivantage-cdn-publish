@@ -30,22 +30,13 @@ module.exports = function(grunt) {
 
     // Configuration to be run (and then tested).
     ivantage_cdn_publish: {
-      default_options: {
+      awesome: {
         options: {
+          cwd: 'test/fixtures'
         },
-        files: {
-          'tmp/default_options': ['test/fixtures/testing', 'test/fixtures/123'],
-        },
-      },
-      custom_options: {
-        options: {
-          separator: ': ',
-          punctuation: ' !!!',
-        },
-        files: {
-          'tmp/custom_options': ['test/fixtures/testing', 'test/fixtures/123'],
-        },
-      },
+        assets: ['*'],
+        version: '0.0.0'
+      }
     },
 
     // Unit tests.

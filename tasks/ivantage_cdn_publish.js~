@@ -1,0 +1,30 @@
+/*
+ * grunt-ivantage-cdn-publish
+ * https://github.com/iVantage/grunt-ivantage-cdn-publish
+ *
+ * Copyright (c) 2013 jtrussell
+ * Licensed under the MIT license.
+ */
+
+'use strict';
+
+module.exports = function(grunt) {
+
+  // Please see the Grunt documentation for more information regarding task
+  // creation: http://gruntjs.com/creating-tasks
+
+  grunt.registerMultiTask('ivantage_cdn_publish', 'Send static build artifacts to the static file server to be picked up by our cdn.', function() {
+    // Merge task-specific and/or target-specific options with these defaults.
+    var options = this.options({
+      cwd: process.cwd()
+    });
+
+    grunt.config.requires(this.name, this.target, 'assets');
+
+    var assets = grunt.file.expand({cwd: options.cwd}, this.data.assets);
+
+    console.log(assets);
+
+  });
+
+};
