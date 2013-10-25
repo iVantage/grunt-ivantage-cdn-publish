@@ -10,8 +10,8 @@
 
 module.exports = function(grunt) {
 
-  var async = grunt.util.async
-    , _ = grunt.util._
+  var _ = grunt.util._
+    , async = require('async')
     , exec = require('shelljs').exec;
 
   // Please see the Grunt documentation for more information regarding task
@@ -19,34 +19,36 @@ module.exports = function(grunt) {
 
   grunt.registerMultiTask('ivantage_cdn_publish', 'Send static build artifacts to the static file server to be picked up by our cdn.', function() {
     // Merge task-specific and/or target-specific options with these defaults.
-    var options = this.options({
-      cwd: process.cwd(),
-      concurrency: 5,
-      scp: 'scp'
-    });
+    var target = this.target
+      , options = this.options({
+          cwd: process.cwd(),
+          scp: 'scp',
+          concurrency: 2
+        });
 
-    grunt.config.requires([this.name, this.target, 'assets'].join('.'));
-    grunt.config.requires([this.name, this.target, 'version'].join('.'));
+    grunt.config.requires([this.name, target, 'assets'].join('.'));
+    grunt.config.requires([this.name, target, 'version'].join('.'));
 
-    var assets = grunt.file.expand({cwd: options.cwd}, this.data.assets)
+    var assets = this.data.assets
+      , version = this.data.version
       , done = _.after(assets.length, this.async());
 
-    var sendFile = function(file, cb) {
-      var cmd = options.scp + ' -r "' + file + '" cdn@static.ivantagehealth.com:/home/cdn/www/ivantage/' + this.target + '/' + this.target + '-' + this.version + '/';
+    var sendAsset = function(asset, cb) {
+      var cmd = options.scp + ' -r "' + asset + '" cdn@static.ivantagehealth.internal:/home/cdn/www/ivantage/' + target + '/' + target + '-' + version + '/';
       exec(cmd, function(code, output) {
         return code > 0 ? cb(output) : cb();
       });
     };
 
-    async.eachLimit(assets, options.concurrency, sendFile, function(err) {
+    async.eachLimit(assets, options.concurrency, sendAsset, function(err) {
       if(err) {
         grunt.log.error(err);
-        grunt.fail.fatal('Failed pushing files to the cdn');
+        return grunt.fail.fatal('Failed pushing files to the cdn');
       }
+
+      grunt.log.ok('Finished pushing files to the cnd');
       done();
     });
-
-    console.log(assets);
 
   });
 

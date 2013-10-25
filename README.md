@@ -35,6 +35,18 @@ grunt.initConfig({
 });
 ```
 
+Note that the `assets` are not expanded per the usual `grunt.file.expand`, they
+are passed along to the `scp` command as listed.
+
+The cdn user may only access the static file server using an ssh key - it cannot
+log in with a password. On windows we recommend using
+[putty](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html) with
+[pageant](http://www.chiark.greenend.org.uk/~sgtatham/putty/download.html).
+
+Note you must also configure your hostfile to access the static file server via
+the internal network. Add an entry to your hostfile for
+`static.ivantagehealth.internal`.
+
 ### Options
 
 #### cwd
@@ -45,6 +57,20 @@ Assets will be pushed to the static file server under their appropriate
 namespace in a directory structure mirroring their layout under `cwd`.
 
 You should also provide asset paths relative to this directory as well.
+
+#### scp
+Type: `String`
+Default: `scp`
+
+The "secure copy" command you would like to use. For example, windows users may
+want to use `pscp`.
+
+#### concurrency
+Type: `Integer`
+Default: `2`
+
+Assets are send individually as listed in the task config. The option controls
+how many outstanding copy requests you can have open at a time.
 
 ## Contributing
 In lieu of a formal styleguide, take care to maintain the existing coding style. Add unit tests for any new or changed functionality. Lint and test your code using [Grunt](http://gruntjs.com/).
