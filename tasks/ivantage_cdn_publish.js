@@ -74,7 +74,7 @@ module.exports = function(grunt) {
 
         cd(origCwd); // Restore CWD
 
-        grunt.log.ok('Finished pushing files to the cnd');
+        grunt.log.ok('Finished pushing files to the CDN');
         done();
       });
 
