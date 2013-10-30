@@ -11,8 +11,10 @@
 module.exports = function(grunt) {
 
   var _ = grunt.util._
+    , request = require('request')
     , async = require('async')
-    , exec = require('shelljs').exec;
+    , exec = require('shelljs').exec
+    , cd = require('shelljs').cd;
 
   // Please see the Grunt documentation for more information regarding task
   // creation: http://gruntjs.com/creating-tasks
@@ -22,7 +24,8 @@ module.exports = function(grunt) {
     var target = this.target
       , options = this.options({
           cwd: process.cwd(),
-          scp: 'scp',
+          scp: process.platform.match(/^win/) ? 'pscp' : 'scp',
+          remoteCommand: process.platform.match(/^win/) ? 'plink' : 'ssh -t',
           concurrency: 2
         });
 
@@ -31,26 +34,50 @@ module.exports = function(grunt) {
 
     var assets = this.data.assets
       , version = this.data.version
+      , origCwd = process.cwd()
       , done = _.after(assets.length, this.async());
 
+    var remoteDir = '/home/cdn/www/ivantage/' + target + '/' + target + '-' + version + '/';
+
     var sendAsset = function(asset, cb) {
-      var cmd = options.scp + ' -r "' + asset + '" cdn@static.ivantagehealth.internal:/home/cdn/www/ivantage/' + target + '/' + target + '-' + version + '/';
+      var cmd = options.scp + ' -r "' + asset + '" cdn@static.ivantagehealth.internal:' + remoteDir;
       exec(cmd, function(code, output) {
         return code > 0 ? cb(output) : cb();
       });
     };
 
-    async.eachLimit(assets, options.concurrency, sendAsset, function(err) {
-      if(err) {
-        grunt.log.error(err);
-        return grunt.fail.fatal('Failed pushing files to the cdn');
+    // Don't send duplicates - wasteful if overwrite is true...
+    request.get('http://static.ivantagehealth.com/manifest.json', function(err, response, body) {
+      if(err || 200 !== response.statusCode) {
+        return grunt.fail.fatal('Could not get manifest from static file server');
       }
 
-      grunt.log.ok('Finished pushing files to the cnd');
-      done();
+      var assetsMap = JSON.parse(body).ivantage;
+
+      if(assetsMap.hasOwnProperty(target) && assetsMap[target].indexOf(target + '-' + version) > -1) {
+        grunt.log.ok('Skipping publish to CDN for ' + target + '@' + version + ' since it already exists.');
+        return done();
+      }
+
+      // Create the remote directory we're going to copy stuff into
+      if(exec(options.remoteCommand + ' cdn@static.ivantagehealth.internal "mkdir -p ' + remoteDir + '"') > 0) {
+        return grunt.fail.fatal('Failed trying to create a folder for this repo on the CDN');
+      }
+
+      cd(options.cwd);
+
+      async.eachLimit(assets, options.concurrency, sendAsset, function(err) {
+        if(err) {
+          grunt.log.error(err);
+          return grunt.fail.fatal('Failed pushing files to the cdn');
+        }
+
+        cd(origCwd); // Restore CWD
+
+        grunt.log.ok('Finished pushing files to the cnd');
+        done();
+      });
+
     });
-
   });
-
-
 };
