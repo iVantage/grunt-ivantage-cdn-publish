@@ -26,7 +26,8 @@ module.exports = function(grunt) {
           cwd: process.cwd(),
           scp: process.platform.match(/^win/) ? 'pscp' : 'scp',
           remoteCommand: process.platform.match(/^win/) ? 'plink' : 'ssh -t',
-          concurrency: 2
+          concurrency: 2,
+          force: false
         });
 
     grunt.config.requires([this.name, target, 'assets'].join('.'));
@@ -54,7 +55,7 @@ module.exports = function(grunt) {
 
       var assetsMap = JSON.parse(body).ivantage;
 
-      if(assetsMap.hasOwnProperty(target) && assetsMap[target].indexOf(target + '-' + version) > -1) {
+      if(!options.force && assetsMap.hasOwnProperty(target) && assetsMap[target].indexOf(target + '-' + version) > -1) {
         grunt.log.ok('Skipping publish to CDN for ' + target + '@' + version + ' since it already exists.');
         return done();
       }
