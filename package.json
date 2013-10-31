@@ -1,7 +1,7 @@
 {
   "name": "grunt-ivantage-cdn-publish",
   "description": "Send static build artifacts to the static file server to be picked up by our cdn.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "homepage": "https://github.com/iVantage/grunt-ivantage-cdn-publish",
   "author": {
     "name": "jtrussell",
@@ -29,8 +29,6 @@
   },
   "devDependencies": {
     "grunt-contrib-jshint": "~0.6.0",
-    "grunt-contrib-clean": "~0.4.0",
-    "grunt-contrib-nodeunit": "~0.2.0",
     "grunt": "~0.4.0rc7"
   },
   "keywords": [
