@@ -10,7 +10,7 @@
 
 module.exports = function(grunt) {
 
-  var _ = grunt.util._
+  var _ = require('lodash')
     , request = require('request')
     , async = require('async')
     , exec = require('shelljs').exec
